@@ -85,7 +85,8 @@ module.exports = {
     settings:runtime.settings,
     util: runtime.util,
     version: runtime.version,
-
+    events: runtime.events,
+    
     comms: api.comms,
     library: api.library,
     auth: api.auth,
