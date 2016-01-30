@@ -31,6 +31,7 @@ var theme = require("./theme");
 var locales = require("./locales");
 var credentials = require("./credentials");
 var comms = require("./comms");
+var status = require("./status");
 
 var auth = require("./auth");
 var needsPermission = auth.needsPermission;
@@ -136,6 +137,9 @@ function init(_server,runtime) {
 
         // Error Handler
         //adminApp.use(errorHandler);
+        
+        //Status
+                adminApp.get("/status",needsPermission("settings.read"),status.get,errorHandler);
     }
 }
 function start() {

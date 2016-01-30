@@ -32,7 +32,7 @@ var app = express();
 
 var settingsFile;
 var flowFile;
-console.log(RED.events.emit);
+//console.log(RED.events.emit);
 
 var knownOpts = {
     "settings":[path],
@@ -268,6 +268,7 @@ if(cluster.isMaster){
         } else {
             RED.log.info(RED.log._("server.headless-mode"));
         }
+
     }).otherwise(function(err) {
         RED.log.error(RED.log._("server.failed-to-start"));
         if (err.stack) {
