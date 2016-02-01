@@ -21,152 +21,19 @@ var express = require("express");
 var crypto = require("crypto");
 try { bcrypt = require('bcrypt'); }
 catch(e) { bcrypt = require('bcryptjs'); }
-var nopt = require("nopt");
 var path = require("path");
 var fs = require("fs-extra");
 var RED = require("./red/red.js");
 var cluster = require('cluster');
-
-var server;
+process.env.RED_VERSION = RED.version();
 var app = express();
-
-var settingsFile;
-var flowFile;
-//console.log(RED.events.emit);
-
-var knownOpts = {
-    "settings":[path],
-    "userDir":[path],
-    "v": Boolean,
-    "help": Boolean
-};
-var shortHands = {
-    "s":["--settings"],
-    "u":["--userDir"],
-    "?":["--help"]
-};
-nopt.invalidHandler = function(k,v,t) {
-    // TODO: console.log(k,v,t);
-}
-
-var parsedArgs = nopt(knownOpts,shortHands,process.argv,2)
-
-if (parsedArgs.help) {
-    console.log("Node-RED v"+RED.version());
-    console.log("Usage: node-red [-v] [-?] [--settings settings.js] [--userDir DIR] [flows.json]");
-    console.log("");
-    console.log("Options:");
-    console.log("  -s, --settings FILE  use specified settings file");
-    console.log("  -u, --userDir  DIR   use specified user directory");
-    console.log("  -v                   enable verbose output");
-    console.log("  -?, --help           show usage");
-    console.log("");
-    console.log("Documentation can be found at http://nodered.org");
-    process.exit();
-}
-if (parsedArgs.argv.remain.length > 0) {
-    flowFile = parsedArgs.argv.remain[0];
-}
-
-if (parsedArgs.settings) {
-    // User-specified settings file
-    settingsFile = parsedArgs.settings;
-} else if (parsedArgs.userDir && fs.existsSync(path.join(parsedArgs.userDir,"settings.js"))) {
-    // User-specified userDir that contains a settings.js
-    settingsFile = path.join(parsedArgs.userDir,"settings.js");
-} else {
-    if (fs.existsSync(path.join(process.env.NODE_RED_HOME,".config.json"))) {
-        // NODE_RED_HOME contains user data - use its settings.js
-        settingsFile = path.join(process.env.NODE_RED_HOME,"settings.js");
-    } else {
-        var userDir = path.join(process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE,".node-red");
-        var userSettingsFile = path.join(userDir,"settings.js");
-        if (fs.existsSync(userSettingsFile)) {
-            // $HOME/.node-red/settings.js exists
-            settingsFile = userSettingsFile;
-        } else {
-            var defaultSettings = path.join(__dirname,"settings.js");
-            var settingsStat = fs.statSync(defaultSettings);
-            if (settingsStat.mtime.getTime() < settingsStat.ctime.getTime()) {
-                // Default settings file has not been modified - safe to copy
-                fs.copySync(defaultSettings,userSettingsFile);
-                settingsFile = userSettingsFile;
-            } else {
-                // Use default settings.js as it has been modified
-                settingsFile = defaultSettings;
-            }
-        }
-    }
-}
+var settings = require('./lib/settings');
+var server = require('./lib/admin_server');
 
 try {
-    var settings = require(settingsFile);
-    settings.settingsFile = settingsFile;
-} catch(err) {
-    console.log("Error loading settings file: "+settingsFile)
-    if (err.code == 'MODULE_NOT_FOUND') {
-        if (err.toString().indexOf(settingsFile) === -1) {
-            console.log(err.toString());
-        }
-    } else {
-        console.log(err);
-    }
-    process.exit();
-}
 
-if (parsedArgs.v) {
-    settings.verbose = true;
-}
-
-if (settings.https) {
-    server = https.createServer(settings.https,function(req,res){app(req,res);});
-} else {
-    server = http.createServer(function(req,res){app(req,res);});
-}
-server.setMaxListeners(0);
-
-function formatRoot(root) {
-    if (root[0] != "/") {
-        root = "/" + root;
-    }
-    if (root.slice(-1) != "/") {
-        root = root + "/";
-    }
-    return root;
-}
-
-if (settings.httpRoot === false) {
-    settings.httpAdminRoot = false;
-    settings.httpNodeRoot = false;
-} else {
-    settings.httpRoot = settings.httpRoot||"/";
-    settings.disableEditor = settings.disableEditor||false;
-}
-
-if (settings.httpAdminRoot !== false) {
-    settings.httpAdminRoot = formatRoot(settings.httpAdminRoot || settings.httpRoot || "/");
-    settings.httpAdminAuth = settings.httpAdminAuth || settings.httpAuth;
-} else {
-    settings.disableEditor = true;
-}
-
-if (settings.httpNodeRoot !== false) {
-    settings.httpNodeRoot = formatRoot(settings.httpNodeRoot || settings.httpRoot || "/");
-    settings.httpNodeAuth = settings.httpNodeAuth || settings.httpAuth;
-}
-
-settings.uiPort = settings.uiPort||1880;
-settings.uiHost = settings.uiHost||"0.0.0.0";
-
-if (flowFile) {
-    settings.flowFile = flowFile;
-}
-if (parsedArgs.userDir) {
-    settings.userDir = parsedArgs.userDir;
-}
-
-try {
     RED.init(server,settings);
+    
 } catch(err) {
     if (err.code == "not_built") {
         console.log("Node-RED has not been built. See README.md for details");

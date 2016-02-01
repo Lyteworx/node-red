@@ -24,7 +24,7 @@ var flows = require("./flows");
 var context = require("./context");
 var Node = require("./Node");
 var log = require("../log");
-
+var cluster = require('cluster');
 var events = require("../events");
 
 var child_process = require('child_process');
@@ -66,11 +66,23 @@ function createNode(node,def) {
 }
 
 function init(runtime) {
-    settings = runtime.settings;
-    credentials.init(runtime.storage);
-    flows.init(runtime.settings,runtime.storage);
-    registry.init(runtime);
-    context.init(runtime.settings);
+    if(cluster.isMaster){
+         const numCPUs = require('os').cpus().length;
+         /*for (var i = 0; i < numCPUs; i++) {
+              cluster.fork();
+         }*/
+        settings = runtime.settings;
+        credentials.init(runtime.storage);
+        flows.init(runtime.settings,runtime.storage);
+        registry.init(runtime);
+        context.init(runtime.settings);
+    }else{
+        settings = runtime.settings;
+        credentials.init(runtime.storage);
+        flows.init(runtime.settings,runtime.storage);
+        registry.init(runtime);
+        context.init(runtime.settings);
+    }
 }
 
 function disableNode(id) {

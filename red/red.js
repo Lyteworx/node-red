@@ -16,6 +16,7 @@
 
 var fs = require("fs");
 var path = require('path');
+var cluster = require('cluster');
 
 var runtime = require("./runtime");
 var api = require("./api");
