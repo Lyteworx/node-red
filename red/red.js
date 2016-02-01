@@ -14,12 +14,12 @@
  * limitations under the License.
  **/
 
-var fs = require("fs");
-var path = require('path');
-var cluster = require('cluster');
 
+var cluster = require('cluster');
+var path = require('path');
 var runtime = require("./runtime");
 var api = require("./api");
+var checkBuild = require("./lib/check_build");
 
 process.env.NODE_RED_HOME = process.env.NODE_RED_HOME || path.resolve(__dirname+"/..");
 
@@ -28,32 +28,32 @@ var adminApp = null;
 var server = null;
 var apiEnabled = false;
 
-function checkBuild() {
-    var editorFile = path.resolve(path.join(__dirname,"..","public","red","red.min.js"));
-    try {
-        var stats = fs.statSync(editorFile);
-    } catch(err) {
-        var e = new Error("Node-RED not built");
-        e.code = "not_built";
-        throw e;
-    }
-}
-
 module.exports = {
     init: function(httpServer,userSettings) {
+      
+        
+        //Check for Settings
         if (!userSettings) {
-            userSettings = httpServer;
-            httpServer = null;
+          var e = new Error("SETTINGS NOT DEFINED");
+          e.code = "no_settings";
+          e.stack = e.stack.split("at")[0];
+          throw e;
         }
 
+        //Check for built client .js file
         if (!userSettings.SKIP_BUILD_CHECK) {
             checkBuild();
         }
 
+        //Check for core nodes directory
         if (!userSettings.coreNodesDir) {
             userSettings.coreNodesDir = path.resolve(path.join(__dirname,"..","nodes"));
         }
 
+        //Check for admin interface root path, http in root path.  
+        //Enable API if either is not false, not sure why httpNodeRoot, path issue?
+        //TJ_TODO: take this out when removing default http in capability
+         
         if (userSettings.httpAdminRoot !== false || userSettings.httpNodeRoot !== false) {
             runtime.init(userSettings,api);
             api.init(httpServer,runtime);
@@ -62,9 +62,7 @@ module.exports = {
             runtime.init(userSettings);
             apiEnabled = false;
         }
-        adminApp = runtime.adminApi.adminApp;
-        nodeApp = runtime.adminApi.nodeApp;
-        server = runtime.adminApi.server;
+        
         return;
     },
     start: function() {
@@ -93,7 +91,7 @@ module.exports = {
     auth: api.auth,
 
     get app() { console.log("Deprecated use of RED.app - use RED.httpAdmin instead"); return runtime.app },
-    get httpAdmin() { return adminApp },
-    get httpNode() { return nodeApp },
-    get server() { return server }
+    get httpAdmin() { return runtime.adminApi.adminApp },
+    get httpNode() { return runtime.adminApi.nodeApp },
+    get server() { return runtime.adminApi.server }
 };

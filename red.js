@@ -24,11 +24,13 @@ catch(e) { bcrypt = require('bcryptjs'); }
 var path = require("path");
 var fs = require("fs-extra");
 var RED = require("./red/red.js");
-var cluster = require('cluster');
+
 process.env.RED_VERSION = RED.version();
+
 var app = express();
 var settings = require('./lib/settings');
 var server = require('./lib/admin_server');
+var basicAuthMiddleware = require('./lib/middleware/basic_auth');
 
 try {
 
@@ -45,31 +47,8 @@ try {
             console.log(err);
         }
     }
+    
     process.exit(1);
-}
-
-function basicAuthMiddleware(user,pass) {
-    var basicAuth = require('basic-auth');
-    var checkPassword;
-    if (pass.length == "32") {
-        // Assume its a legacy md5 password
-        checkPassword = function(p) {
-            return crypto.createHash('md5').update(p,'utf8').digest('hex') === pass;
-        }
-    } else {
-        checkPassword = function(p) {
-            return bcrypt.compareSync(p,pass);
-        }
-    }
-
-    return function(req,res,next) {
-        var requestUser = basicAuth(req);
-        if (!requestUser || requestUser.name !== user || !checkPassword(requestUser.pass)) {
-            res.set('WWW-Authenticate', 'Basic realm=Authorization Required');
-            return res.sendStatus(401);
-        }
-        next();
-    }
 }
 
 if (settings.httpAdminRoot !== false && settings.httpAdminAuth) {
@@ -105,61 +84,58 @@ function getListenPath() {
         listenPath += "/";
     }
     return listenPath;
-}
+};
 
-if(cluster.isMaster){
-
-    RED.start().then(function() {
-        if (settings.httpAdminRoot !== false || settings.httpNodeRoot !== false || settings.httpStatic) {
-            server.on('error', function(err) {
-                if (err.errno === "EADDRINUSE") {
-                    RED.log.error(RED.log._("server.unable-to-listen", {listenpath:getListenPath()}));
-                    RED.log.error(RED.log._("server.port-in-use"));
+RED.start().then(function() {
+    if (settings.httpAdminRoot !== false || settings.httpNodeRoot !== false || settings.httpStatic) {
+        server.on('error', function(err) {
+            if (err.errno === "EADDRINUSE") {
+                RED.log.error(RED.log._("server.unable-to-listen", {listenpath:getListenPath()}));
+                RED.log.error(RED.log._("server.port-in-use"));
+            } else {
+                RED.log.error(RED.log._("server.uncaught-exception"));
+                if (err.stack) {
+                    RED.log.error(err.stack);
                 } else {
-                    RED.log.error(RED.log._("server.uncaught-exception"));
-                    if (err.stack) {
-                        RED.log.error(err.stack);
-                    } else {
-                        RED.log.error(err);
-                    }
+                    RED.log.error(err);
                 }
-                process.exit(1);
-            });
-            server.listen(settings.uiPort,settings.uiHost,function() {
-                if (settings.httpAdminRoot === false) {
-                    RED.log.info(RED.log._("server.admin-ui-disabled"));
-                }
-                process.title = 'node-red';
-                RED.log.info(RED.log._("server.now-running", {listenpath:getListenPath()}));
-            });
-        } else {
-            RED.log.info(RED.log._("server.headless-mode"));
-        }
+            }
+            process.exit(1);
+        });
+        server.listen(settings.uiPort,settings.uiHost,function() {
+            if (settings.httpAdminRoot === false) {
+                RED.log.info(RED.log._("server.admin-ui-disabled"));
+            }
+            process.title = 'node-red';
+            RED.log.info(RED.log._("server.now-running", {listenpath:getListenPath()}));
+        });
+    } else {
+        RED.log.info(RED.log._("server.headless-mode"));
+    }
 
-    }).otherwise(function(err) {
-        RED.log.error(RED.log._("server.failed-to-start"));
-        if (err.stack) {
-            RED.log.error(err.stack);
-        } else {
-            RED.log.error(err);
-        }
-    });
+}).otherwise(function(err) {
+    RED.log.error(RED.log._("server.failed-to-start"));
+    if (err.stack) {
+        RED.log.error(err.stack);
+    } else {
+        RED.log.error(err);
+    }
+});
 
 
-    process.on('uncaughtException',function(err) {
-        util.log('[red] Uncaught Exception:');
-        if (err.stack) {
-            util.log(err.stack);
-        } else {
-            util.log(err);
-        }
-        process.exit(1);
-    });
+process.on('uncaughtException',function(err) {
+    util.log('[red] Uncaught Exception:');
+    if (err.stack) {
+        util.log(err.stack);
+    } else {
+        util.log(err);
+    }
+    process.exit(1);
+});
 
-    process.on('SIGINT', function () {
-        RED.stop();
-        // TODO: need to allow nodes to close asynchronously before terminating the
-        // process - ie, promises
-        process.exit();
-    });
-}
+process.on('SIGINT', function () {
+    RED.stop();
+    // TODO: need to allow nodes to close asynchronously before terminating the
+    // process - ie, promises
+    process.exit();
+});

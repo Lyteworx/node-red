@@ -1,6 +1,5 @@
 /**
  * Copyright 2013, 2015 IBM Corp.
- * Copyright 2016 Lyteworx
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +14,18 @@
  * limitations under the License.
  **/
 
-module.exports = {
-    uiPort : 1880,
-    uiHost : "0.0.0.0"
-};
+var fs = require('fs');
+var path = require('path');
+
+module.exports = function() {
+
+    var editorFile = path.resolve(path.join(process.env.PWD,"public","red","red.min.js"));
+    try {
+        var stats = fs.statSync(editorFile);
+    } catch(err) {
+        var e = new Error("Node-RED not built");
+        e.code = "not_built";
+        throw e;
+    }
+}
+
