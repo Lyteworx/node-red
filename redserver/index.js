@@ -20,12 +20,14 @@ var https = require('https');
 var path = require('path');
 var express = require("express");
 var app = express();
-var settings = require('./settings');
+var settings = require(path.join(process.env.PWD, 'lib', 'settings'));
 var basicAuthMiddleware = require('./middleware/basic_auth');
+var api = require('./api');
+var checkBuild = require('./lib/check_build');
 var RED = require(path.join(process.env.PWD,"red","red.js"));
 
 var http = require('http');
-var settings = require('./settings');
+var settings = require(path.join(process.env.PWD,"lib","settings.js"));
 
 if (settings.https) {
     server = https.createServer(settings.https,app);
@@ -34,20 +36,24 @@ if (settings.https) {
 }
 server.setMaxListeners(0);
 
+api.init(server, settings);
+
+//Check for built client .js file
+if (!settings.SKIP_BUILD_CHECK) {
+    checkBuild();
+}
+
 if (settings.httpAdminRoot !== false && settings.httpAdminAuth) {
 RED.log.warn(RED.log._("server.httpadminauth-deprecated"));
 app.use(settings.httpAdminRoot, basicAuthMiddleware(settings.httpAdminAuth.user,settings.httpAdminAuth.pass));
 }
 
 if (settings.httpAdminRoot !== false) {
-    console.log(RED.httpAdmin);
-    app.use(settings.httpAdminRoot,RED.httpAdmin);
+    
+    app.use(settings.httpAdminRoot,api.adminApp);
 }
 if (settings.httpNodeRoot !== false && settings.httpNodeAuth) {
     app.use(settings.httpNodeRoot,basicAuthMiddleware(settings.httpNodeAuth.user,settings.httpNodeAuth.pass));
-}
-if (settings.httpNodeRoot !== false) {
-    app.use(settings.httpNodeRoot,RED.httpNode);
 }
 
 if (settings.httpStatic) {
@@ -61,7 +67,7 @@ if (settings.httpStatic) {
 if (settings.httpAdminRoot !== false || settings.httpNodeRoot !== false || settings.httpStatic) {
     server.on('error', function(err) {
         if (err.errno === "EADDRINUSE") {
-            RED.log.error(RED.log._("server.unable-to-listen", {listenpath:getListenPath()}));
+            RED.log.error(RED.log._("server.unable-to-listen", {listenpath:settings.getListenPath()}));
             RED.log.error(RED.log._("server.port-in-use"));
         } else {
             RED.log.error(RED.log._("server.uncaught-exception"));
@@ -78,7 +84,7 @@ if (settings.httpAdminRoot !== false || settings.httpNodeRoot !== false || setti
             RED.log.info(RED.log._("server.admin-ui-disabled"));
         }
         process.title = 'node-red';
-        RED.log.info(RED.log._("server.now-running", {listenpath:getListenPath()}));
+        RED.log.info(RED.log._("server.now-running", {listenpath:settings.getListenPath()}));
     });
 } else {
     RED.log.info(RED.log._("server.headless-mode"));

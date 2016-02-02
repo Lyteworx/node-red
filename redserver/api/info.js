@@ -15,12 +15,10 @@
  **/
 var theme = require("./theme");
 var util = require('util');
-var settings;
+var path = require('path');
+var settings = require(path.join(process.env.PWD, 'lib', 'settings'));
 
 module.exports = {
-    init: function(runtime) {
-        settings = runtime.settings;
-    },
     settings: function(req,res) {
         var safeSettings = {
             httpNodeRoot: settings.httpNodeRoot,

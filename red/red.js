@@ -18,19 +18,14 @@
 var cluster = require('cluster');
 var path = require('path');
 var runtime = require("./runtime");
-var api = require("./api");
-var checkBuild = require("./lib/check_build");
 
 process.env.NODE_RED_HOME = process.env.NODE_RED_HOME || path.resolve(__dirname+"/..");
 
 var nodeApp = null;
-var adminApp = null;
-var server = null;
 var apiEnabled = false;
 
 module.exports = {
-    init: function(httpServer,userSettings) {
-      
+    init: function(userSettings) {
         
         //Check for Settings
         if (!userSettings) {
@@ -40,44 +35,20 @@ module.exports = {
           throw e;
         }
 
-        //Check for built client .js file
-        if (!userSettings.SKIP_BUILD_CHECK) {
-            checkBuild();
-        }
-
         //Check for core nodes directory
         if (!userSettings.coreNodesDir) {
             userSettings.coreNodesDir = path.resolve(path.join(__dirname,"..","nodes"));
         }
 
-        //Check for admin interface root path, http in root path.  
-        //Enable API if either is not false, not sure why httpNodeRoot, path issue?
-        //TJ_TODO: take this out when removing default http in capability
-         
-        if (userSettings.httpAdminRoot !== false || userSettings.httpNodeRoot !== false) {
-            runtime.init(userSettings,api);
-            api.init(httpServer,runtime);
-            apiEnabled = true;
-        } else {
-            runtime.init(userSettings);
-            apiEnabled = false;
-        }
-        
+        runtime.init(userSettings);
+
         return;
     },
     start: function() {
-        return runtime.start().then(function() {
-            if (apiEnabled) {
-                return api.start();
-            }
-        });
+        return runtime.start();
     },
     stop: function() {
-        return runtime.stop().then(function() {
-            if (apiEnabled) {
-                return api.stop();
-            }
-        })
+        return runtime.stop();
     },
     nodes: runtime.nodes,
     log: runtime.log,
@@ -85,13 +56,8 @@ module.exports = {
     util: runtime.util,
     version: runtime.version,
     events: runtime.events,
-    
-    comms: api.comms,
-    library: api.library,
-    auth: api.auth,
 
     get app() { console.log("Deprecated use of RED.app - use RED.httpAdmin instead"); return runtime.app },
-    get httpAdmin() { return runtime.adminApi.adminApp },
     get httpNode() { return runtime.adminApi.nodeApp },
-    get server() { return runtime.adminApi.server }
+
 };

@@ -34,9 +34,10 @@ var comms = require("./comms");
 var status = require("./status");
 
 var auth = require("./auth");
+var i18n = require('./lib/i18n');
+
 var needsPermission = auth.needsPermission;
 
-var i18n;
 var log;
 var adminApp;
 var nodeApp;
@@ -52,33 +53,24 @@ var errorHandler = function(err,req,res,next) {
     res.status(400).json({error:"unexpected_error", message:err.toString()});
 };
 
-function init(_server,runtime) {
+function init(_server,settings) {
     server = _server;
-    var settings = runtime.settings;
-    i18n = runtime.i18n;
-    log = runtime.log;
+
+    //i18n = runtime.i18n;
+    //log = runtime.log;
     if (settings.httpNodeRoot !== false) {
         nodeApp = express();
-    }
-    if (settings.httpAdminRoot !== false) {
-        comms.init(server,runtime);
+
+
         adminApp = express();
-        auth.init(runtime);
-        credentials.init(runtime);
-        flows.init(runtime);
-        flow.init(runtime);
-        info.init(runtime);
-        library.init(adminApp,runtime);
-        locales.init(runtime);
-        nodes.init(runtime);
 
         // Editor
         if (!settings.disableEditor) {
-            ui.init(runtime);
+            ui.init(/*runtime*/);
             var editorApp = express();
             editorApp.get("/",ui.ensureSlash,ui.editor);
             editorApp.get("/icons/:icon",ui.icon);
-            theme.init(runtime);
+            theme.init(settings);
             if (settings.editorTheme) {
                 editorApp.use("/theme",theme.app());
             }
@@ -143,9 +135,12 @@ function init(_server,runtime) {
     }
 }
 function start() {
-    return i18n.registerMessageCatalog("editor",path.resolve(path.join(__dirname,"locales")),"editor.json").then(function(){
-        comms.start();
-    });
+    return i18n.init()
+        .then(function() {
+            i18n.registerMessageCatalog("editor",path.resolve(path.join(process.env.PWD,"locales")),"editor.json").then(function(){
+                comms.start();
+            });
+        });
 }
 function stop() {
     comms.stop();

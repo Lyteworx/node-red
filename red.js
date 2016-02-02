@@ -26,12 +26,12 @@ var RED = require("./red/red.js");
 process.env.RED_VERSION = RED.version();
 
 var settings = require('./lib/settings');
-var server = require('./lib/admin_server');
+var server = require('./redserver');
 
 
 try {
 
-    RED.init(server,settings);
+    RED.init(settings);
     
 } catch(err) {
     if (err.code == "not_built") {
@@ -47,18 +47,6 @@ try {
     
     process.exit(1);
 }
-
-function getListenPath() {
-    var listenPath = 'http'+(settings.https?'s':'')+'://'+
-                    (settings.uiHost == '0.0.0.0'?'127.0.0.1':settings.uiHost)+
-                    ':'+settings.uiPort;
-    if (settings.httpAdminRoot !== false) {
-        listenPath += settings.httpAdminRoot;
-    } else if (settings.httpStatic) {
-        listenPath += "/";
-    }
-    return listenPath;
-};
 
 RED.start().then(function() {
   

@@ -33,14 +33,14 @@ function nodeIconDir(dir) {
 }
 
 module.exports = {
-    init: function(runtime) {
+    init: function(settings) {
         editorTemplate = fs.readFileSync(path.join(templateDir,"index.mst"),"utf8");
-        Mustache.parse(editorTemplate);
+       // Mustache.parse(editorTemplate);
         // TODO: this allows init to be called multiple times without
         //       registering multiple instances of the listener.
         //       It isn't.... ideal.
-        runtime.events.removeListener("node-icon-dir",nodeIconDir);
-        runtime.events.on("node-icon-dir",nodeIconDir);
+        //runtime.events.removeListener("node-icon-dir",nodeIconDir);
+        //runtime.events.on("node-icon-dir",nodeIconDir);
     },
 
     ensureSlash: function(req,res,next) {

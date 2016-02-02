@@ -15,10 +15,10 @@
  **/
 var fs = require('fs');
 var path = require('path');
-var i18n;
+var i18n = require('./lib/i18n');
 var supportedLangs = [];
 
-var apiLocalDir = path.resolve(path.join(__dirname,"locales"));
+var apiLocalDir = path.resolve(path.join(process.env.PWD,"locales"));
 
 var initSupportedLangs = function() {
     fs.readdir(apiLocalDir, function(err,files) {
