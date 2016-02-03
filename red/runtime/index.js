@@ -15,7 +15,7 @@
  **/
 
 var when = require('when');
-
+var cluster = require('cluster');
 var redNodes = require("./nodes");
 var storage = require("./storage");
 var log = require("./log");
@@ -76,6 +76,10 @@ function getVersion() {
 }
 
 function start() {
+    if(settings.silentChildren){
+        console.log(process.pid);
+        console.log = function(){};
+    }
     return i18n.init()
         .then(function() {
             return i18n.registerMessageCatalog("runtime",path.resolve(path.join(process.env.PWD,"locales")),"runtime.json")
@@ -139,7 +143,9 @@ function start() {
                 if (settings.settingsFile) {
                     log.info(log._("runtime.paths.settings",{path:settings.settingsFile}));
                 }
+             
                 redNodes.loadFlows().then(redNodes.startFlows);
+                
             }).otherwise(function(err) {
                 console.log(err);
             });

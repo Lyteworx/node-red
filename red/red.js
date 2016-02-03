@@ -14,8 +14,6 @@
  * limitations under the License.
  **/
 
-
-var cluster = require('cluster');
 var path = require('path');
 var runtime = require("./runtime");
 

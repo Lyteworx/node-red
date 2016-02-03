@@ -17,63 +17,90 @@
 
 var util = require("util");
 var crypto = require("crypto");
-try { bcrypt = require('bcrypt'); }
-catch(e) { bcrypt = require('bcryptjs'); }
+try { bcrypt = require("bcrypt"); }
+catch(e) { bcrypt = require("bcryptjs"); }
 var path = require("path");
 var fs = require("fs-extra");
-var RED = require("./red/red.js");
-
+var cluster = require("cluster");
+    var RED = require("./red/red.js");
 process.env.RED_VERSION = RED.version();
 
-var settings = require('./lib/settings');
-var server = require('./redserver');
+if(cluster.isMaster){
 
-
-try {
-
-    RED.init(settings);
-    
-} catch(err) {
-    if (err.code == "not_built") {
-        console.log("Node-RED has not been built. See README.md for details");
-    } else {
-        console.log("Failed to start server:");
-        if (err.stack) {
-            console.log(err.stack);
-        } else {
-            console.log(err);
+    //var server = require('./redserver');
+    var settings = require(path.join(process.env.PWD,'lib','settings'));
+    const numCPUs = require('os').cpus().length;
+    console.log("Starting %s processes", numCPUs);
+    for (var i = 0; i < numCPUs; i++) {
+        var worker = cluster.fork();
+        worker.send({"settings":settings});
+    }
+    var deathFunction = function(){
+        for (var id in cluster.workers) {
+            console.log('KILLING: %s', id)
+            cluster.workers[id].kill();
         }
     }
+    process.on("exit", deathFunction);
+    process.on("SIGTERM", deathFunction);
+    process.on("SIGHUP", deathFunction);
+    process.on("SIGINT", deathFunction);
+}else if(cluster.isWorker){
     
-    process.exit(1);
+    process.on("message", function(data){
+        
+        if(data.hasOwnProperty("settings")){
+
+            try {
+
+                RED.init(data.settings);
+                
+            } catch(err) {
+                if (err.code == "not_built") {
+                    console.log("Node-RED has not been built. See README.md for details");
+                } else {
+                    console.log("Failed to start server:");
+                    if (err.stack) {
+                        console.log(err.stack);
+                    } else {
+                        console.log(err);
+                    }
+                }
+                
+                process.exit(1);
+            }
+
+            RED.start().then(function() {
+            
+
+            }).otherwise(function(err) {
+                RED.log.error(RED.log._("server.failed-to-start"));
+                if (err.stack) {
+                    RED.log.error(err.stack);
+                } else {
+                    RED.log.error(err);
+                }
+            });
+
+
+            process.on('uncaughtException',function(err) {
+                util.log('[red] Uncaught Exception:');
+                if (err.stack) {
+                    util.log(err.stack);
+                } else {
+                    util.log(err);
+                }
+                process.exit(1);
+            });
+
+            process.on('SIGINT', function () {
+                RED.stop();
+                // TODO: need to allow nodes to close asynchronously before terminating the
+                // process - ie, promises
+                process.exit();
+            });
+        }
+        
+    })
+    
 }
-
-RED.start().then(function() {
-  
-
-}).otherwise(function(err) {
-    RED.log.error(RED.log._("server.failed-to-start"));
-    if (err.stack) {
-        RED.log.error(err.stack);
-    } else {
-        RED.log.error(err);
-    }
-});
-
-
-process.on('uncaughtException',function(err) {
-    util.log('[red] Uncaught Exception:');
-    if (err.stack) {
-        util.log(err.stack);
-    } else {
-        util.log(err);
-    }
-    process.exit(1);
-});
-
-process.on('SIGINT', function () {
-    RED.stop();
-    // TODO: need to allow nodes to close asynchronously before terminating the
-    // process - ie, promises
-    process.exit();
-});

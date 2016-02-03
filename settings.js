@@ -177,5 +177,8 @@ module.exports = {
             // Whether or not to include audit events in the log output
             audit: false
         }
-    }
+    },
+    //Quiet output on child processes
+    silentChildren:true
+    
 }

@@ -65,22 +65,11 @@ function createNode(node,def) {
 
 function init(runtime) {
 
-/*
-    if(cluster.isMaster){
-            const numCPUs = require('os').cpus().length;
-            for (var i = 0; i < numCPUs; i++) {
-                cluster.fork();
-            }
-    }else{
-        
-    }            
-*/
-
-        settings = runtime.settings;
-        credentials.init(runtime.storage);
-        flows.init(runtime.settings,runtime.storage);
-        registry.init(runtime);
-        context.init(runtime.settings);
+    settings = runtime.settings;
+    credentials.init(runtime.storage);
+    flows.init(runtime.settings,runtime.storage);
+    registry.init(runtime);
+    context.init(runtime.settings);
 }
 
 function disableNode(id) {
