@@ -27,7 +27,8 @@ process.env.RED_VERSION = RED.version();
 
 if(cluster.isMaster){
 
-    //var server = require('./redserver');
+    var server = require('./redserver');
+   
     var settings = require(path.join(process.env.PWD,'lib','settings'));
     const numCPUs = require('os').cpus().length;
     console.log("Starting %s processes", numCPUs);
@@ -37,14 +38,24 @@ if(cluster.isMaster){
     }
     var deathFunction = function(){
         for (var id in cluster.workers) {
-            console.log('KILLING: %s', id)
+            console.log('KILLING: %s', cluster.workers[id].process.pid)
             cluster.workers[id].kill();
-        }
+        };
+        setInterval(function(){
+          if(!cluster.workers.length){
+               process.exit(1);
+          }else{
+              console.log('Still waiting on %s workers', cluster.workers.length.toString());
+          }
+        },1000);
+       
+        
     }
-    process.on("exit", deathFunction);
-    process.on("SIGTERM", deathFunction);
-    process.on("SIGHUP", deathFunction);
-    process.on("SIGINT", deathFunction);
+    const signals = ["exit", "SIGTERM", "SIGHUP", "SIGINT"];
+    signals.forEach(function(signal){
+       process.on(signal, deathFunction); 
+    });
+   
 }else if(cluster.isWorker){
     
     process.on("message", function(data){
