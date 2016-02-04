@@ -15,7 +15,7 @@
  **/
 
 var redApp = null;
-var storage;
+var storage = process.storage;
 var log;
 var needsPermission = require("./auth").needsPermission;
 
@@ -71,12 +71,13 @@ function createLibrary(type) {
 module.exports = {
     init: function(app,runtime) {
         redApp = app;
-        log = runtime.log;
-        storage = runtime.storage;
+        log = process.log;
+        storage = process.storage;
     },
     register: createLibrary,
 
     getAll: function(req,res) {
+        
         storage.getAllFlows().then(function(flows) {
             log.audit({event: "library.get.all",type:"flow"},req);
             res.json(flows);

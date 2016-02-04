@@ -41,7 +41,7 @@ function init() {
     log = process.log;
     if (settings.adminAuth) {
         Users.init(settings.adminAuth);
-        Tokens.init(settings.adminAuth,runtime.storage);
+        Tokens.init(settings.adminAuth,process.storage);
         strategies.init(runtime);
     }
 }
