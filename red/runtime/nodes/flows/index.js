@@ -24,7 +24,7 @@ var context = require("../context")
 var credentials = require("../credentials");
 
 var flowUtil = require("./util");
-var log = require("../../log");
+var log = process.log;
 var events = require("../../events");
 var redUtil = require("../../util");
 var deprecated = require("../registry/deprecated");

@@ -19,7 +19,7 @@ var EventEmitter = require("events").EventEmitter;
 var when = require("when");
 
 var redUtil = require("../util");
-var Log = require("../log");
+var Log = process.log;
 var context = require("./context");
 var flows = require("./flows");
 

@@ -1,6 +1,7 @@
 #TASKS
 
-- Cluster client
+- Cluster client - DONE
+- Move Storage into master lib (to be packaged separately later)
 - Pass flow from client to control
 - Pass updated flow from control to client
 - Separate client and control into separate packages

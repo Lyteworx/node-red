@@ -36,9 +36,9 @@ var server = oauth2orize.createServer();
 
 server.exchange(oauth2orize.exchange.password(strategies.passwordTokenExchange));
 
-function init(runtime) {
-    settings = runtime.settings;
-    log = runtime.log;
+function init() {
+    settings = process.env.settings;
+    log = process.log;
     if (settings.adminAuth) {
         Users.init(settings.adminAuth);
         Tokens.init(settings.adminAuth,runtime.storage);

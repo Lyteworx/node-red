@@ -17,7 +17,7 @@
 var when = require("when");
 var clone = require("clone");
 var assert = require("assert");
-var log = require("./log");
+var log = process.log;
 
 var userSettings = null;
 var globalSettings = null;

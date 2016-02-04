@@ -27,7 +27,7 @@ var checkBuild = require('./lib/check_build');
 var RED = require(path.join(process.env.PWD,"red","red.js"));
 
 var http = require('http');
-var settings = require(path.join(process.env.PWD,"lib","settings.js"));
+var settings = process.env.settings = require(path.join(process.env.PWD,"lib","settings.js"));
 
 if (settings.https) {
     server = https.createServer(settings.https,app);

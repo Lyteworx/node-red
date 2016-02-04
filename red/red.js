@@ -13,11 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-
+ 
 var path = require('path');
-var runtime = require("./runtime");
-
 process.env.NODE_RED_HOME = process.env.NODE_RED_HOME || path.resolve(__dirname+"/..");
+process.log = require("../lib/log.js");
+
+process.storage = require(path.join(process.env.PWD,"lib","storage"));
+process.i18n = require(path.join(process.env.PWD, "lib", "i18n"));
+var runtime = require("./runtime");
 
 var nodeApp = null;
 var apiEnabled = false;

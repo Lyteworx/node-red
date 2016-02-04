@@ -56,8 +56,8 @@ var errorHandler = function(err,req,res,next) {
 function init(_server,settings) {
     server = _server;
 
-    //i18n = runtime.i18n;
-    //log = runtime.log;
+    i18n = process.i18n;
+    log = process.log;
     if (settings.httpNodeRoot !== false) {
         nodeApp = express();
 

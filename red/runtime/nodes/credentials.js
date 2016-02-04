@@ -16,7 +16,7 @@
 
 var when = require("when");
 
-var log = require("../log");
+var log = process.log;
 
 var credentialCache = {};
 var storage = null;

@@ -23,7 +23,7 @@ var credentials = require("./credentials");
 var flows = require("./flows");
 var context = require("./context");
 var Node = require("./Node");
-var log = require("../log");
+var log = process.log;
 var cluster = require('cluster');
 var events = require("../events");
 

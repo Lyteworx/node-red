@@ -15,14 +15,14 @@
  **/
 
 var when = require('when');
+var path = require('path');
 var cluster = require('cluster');
 var redNodes = require("./nodes");
-var storage = require("./storage");
-var log = require("./log");
-var i18n = require("./i18n");
+var storage = process.env.storage;
+var log = process.log;
+var i18n = process.i18n;
 var events = require("./events");
 var settings = require("./settings");
-var path = require('path');
 var fs = require("fs");
 
 var runtimeMetricInterval = null;

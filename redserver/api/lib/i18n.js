@@ -90,6 +90,7 @@ function init() {
 }
 
 function getCatalog(namespace,lang) {
+
     var result = null;
     if (resourceCache.hasOwnProperty(namespace)) {
         result = resourceCache[namespace][lang];
