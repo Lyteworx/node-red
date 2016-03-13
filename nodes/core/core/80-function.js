@@ -66,6 +66,7 @@ module.exports = function(RED) {
         this.outstandingTimers = [];
         this.outstandingIntervals = [];
         var sandbox = {
+            node:node,
             require:require,
             console:console,
             util:util,
